@@ -1,0 +1,157 @@
+<div class="block">
+	<a href="#" id="gift-list-dialog-btn" class="button green">Назначить подарки</a>
+</div>
+<div id="gift-list-dialog" style="display:none">
+	{$wa->csrf()}
+	<input type="hidden" name="product_id" value="{$product_id}">
+	<h5>Параметры</h5>
+	<div class="gift-params field-group">
+		<div class="field">
+			<div class="name">Компановка</div>
+			<div class="value">
+				<input type="radio" name="gift_param[set]" value="0"{if $params.set == 0} checked{/if}>
+				<span>каждый назначенный подарок предлагается по отдельности на выбор, при этом количество конкретного подарка не учитывается</span>
+				<br>
+				<input type="radio" name="gift_param[set]" value="1"{if $params.set == 1} checked{/if}>
+				<span>предлагается только комплект из назначенных подарков, при этом учитывается количество конкретного подарка</span>
+			</div>
+		</div>
+		<div class="field">
+			<div class="name">Количество</div>
+			<div class="value">
+				<input type="radio" name="gift_param[qty]" value="0"{if $params.qty == 0} checked{/if}>
+				<span>за каждый товар в заказе покупатель получает 1 подарок (1 комплект подарков)</span>
+				<br>
+				<input type="radio" name="gift_param[qty]" value="1"{if $params.qty == 1} checked{/if}>
+				<span>за любое количество товара в заказе покупатель получает всего 1 подарок (1 комплект подарков)</span>
+			</div>
+		</div>
+		{if $stcks|default:0}
+		<div class="field">
+			<div class="name">Списывать со склада</div>
+			<div class="value">
+				<select name="gift_param[stock_id]">
+					{foreach $stcks as $stock_id=>$stock_name}
+					<option value="{$stock_id}"{if $params.stock_id == $stock_id} selected{/if}>{$stock_name}</option>
+					{/foreach}
+				</select>
+				<br><span class="hint">Укажите склад, с которого предполагается списание подаров.</span>
+			</div>
+		</div>
+		{/if}
+		<div class="field">
+			<div class="name">Срок</div>
+			<div class="value">
+				с <input type="text" name="gift_param[start]" value="{$params.start}" id="gift-start-input" class="short">
+				по <input type="text" name="gift_param[finish]" value="{$params.finish}" id="gift-finish-input" class="short">
+				<br><span class="hint">Если не указан диапазон (одно или оба поля пустые), то подарки предоставляются бессрочно</span>
+			</div>
+		</div>
+	</div>
+	<h5>Назначенные подарки</h5>
+	{if isset($gift_list) && $gift_list}
+	<span class="hint">Во второй колонке указывается количество подарков в комплекте подарков.</span>
+	<table class="zebra full-width" id="gifts-table">
+		<tbody>
+		{foreach $gift_list as $id=>$gift}
+		<tr>
+			<td class="min-width"><i class="icon16 sort"></i></td>
+			<td class="min-width">
+				<input type="checkbox" name="gift_id[]" value="{$id}"{if isset($selected_gifts[$id])} checked{/if}>
+			</td>
+			<td class="min-width">
+				<input type="text" name="gift_qty[{$id}]" value="{if isset($selected_gifts[$id])}{$selected_gifts[$id].quantity}{else}1{/if}" class="gift-qty">
+			</td>
+			<td>
+				{shopHelper::getStockCountIcon($gift.count)}{if $gift.count !== null}{$gift.count}{else}∞{/if}
+			</td>
+			<td>
+				<a href="{$wa_app_url}?action=products#/product/{$id}/" target="_blank">
+					{$gift.name}
+					<i class="icon10 new-window"></i>
+				</a>
+			</td>
+		</tr>
+		{/foreach}
+		</tbody>
+	</table>
+	{/if}
+</div>
+
+<style>
+.gift-list {
+list-style:none;
+}
+.gift-list li {
+padding:3px;
+}
+#choosen_gift a{
+margin: 5px 0 10px;
+display: block;
+text-decoration: none;
+}
+#choosen_gift hr{
+margin: 10px 0;
+background: rgb(226, 212, 167);
+border: none;
+height: 1px;
+border-bottom: #fff solid 1px;
+}
+#gifts-table {
+margin-top:10px;
+}
+#gifts-table .gift-qty {
+width:20px!important;
+text-align:center;
+}
+.gift-params [type="radio"] + span {
+font-size:13px;
+display:block;
+margin-left:20px;
+}
+.gift-params [type="radio"] {
+float:left;
+}
+#gift-start-input, #gift-finish-input {
+min-width: 75px !important;
+width: 75px !important;
+}
+</style>
+
+<script type="text/javascript">
+$(function(){
+	$('#gift-list-dialog-btn').click(function(){
+		$('#gift-list-dialog').waDialog({
+			title: 'Выбор подарка для товара',
+			buttons: '<input type="submit" value="Сохранить" class="button green" /> или <a href="#" class="cancel">отмена</a>',
+			onSubmit: function (d) {
+				d.find(':submit').after('<i class="icon16 loading"></i>');
+				$.post('?plugin=gift&module=setGift',d.find('form').serializeArray(),function(){
+					d.find('.loading').remove();
+					$('#choosen_gift').html('нет подарков');
+					$('#gifts-table :checked').each(function(){
+						var a = $('<a />'),
+							id = $(this).val();
+						a.attr('href','{$wa_app_url}?action=products#/product/'+id+'/');
+						a.text($(this).closest('td').next().text());
+						$('#choosen_gift').append(a);
+					})
+				});
+				return false;
+			}
+		});
+		return false;
+	})
+	$('#gifts-table').sortable({
+		'distance': 5,
+		'opacity': 0.75,
+		'items': '> tbody:first > tr:visible',
+		'handle': '.sort',
+		'cursor': 'move',
+		'tolerance': 'pointer'
+	})
+	
+	$('#gift-start-input').datepicker();
+	$('#gift-finish-input').datepicker();
+})
+</script>

@@ -1,0 +1,52 @@
+{if $gifts}
+<div id="gift-p-list-wr" class="window" data-url="{$wa_app_url}">
+	<div><b>При оформлениии данного заказа Вы получаете подарки</b></div>
+	{foreach $gifts as $product_id=>$g}
+	<p>Подарки к <b>{$g.item.product.name}</b>{if $g.params.set == 0}, <a href="#gft-p-list-{$product_id}" name="modal">изменить состав</a>{/if}:</p>
+	<ul class="gft-p-list">
+		{foreach $g.gifts as $p}
+		<li data-product-id="{$p.id}">
+			<div class="image">
+				{$wa->shop->productImgHtml($p, '100', ['itemprop' => 'image', 'alt' => $p.name, 'default' => ''])}
+			</div>
+			<div class="name"><a href="{$p.frontend_url}">{$p.name}</a> &times; {$p.quantity}</div>
+		</li>
+		{/foreach}
+	</ul>
+	{if $g.params.set}
+	
+	{else}
+	<div style="display:none;">
+		<div id="gft-p-list-{$product_id}" class="modal-block">
+			<div class="close-btn arcticmodal-close">закрыть</div>
+			<p>Покупая <b>{$g.item.product.name}</b> ({$g.item.quantity} шт.), вы получаете подарки. Выберите подарки ({$g.item.quantity} шт.):</p>
+			<form action="{$wa_app_url}gift-cart-set/">
+				<input type="hidden" name='product_id' value="{$product_id}">
+				<ul data-quantity="{$g.quantity}">
+					{foreach $g.gifts as $p}
+					<li data-product-id="{$p.id}">
+						<div class="image">
+							{$wa->shop->productImgHtml($p, '100', ['itemprop' => 'image', 'alt' => $p.name, 'default' => ''])}
+						</div>
+						<div class="name">
+							<a href="{$p.frontend_url}">{$p.name}</a><br>
+						</div>
+						<select name="data[{$p.id}]">
+						{for $i=0 to $p.max_quantity}
+							<option value="{$i}"{if $i == $p.quantity} selected{/if}>{$i}</option>
+						{/for}
+						</select>
+						<div class="avail">{if $p.count !== null && $p.count < $g.quantity}на складе только {$p.count} шт.{/if}</div>
+					</li>
+					{/foreach}
+				</ul>
+			</form>
+			<div class="btn-wr"><button>Выбор сделан</button></div>
+		</div>
+	</div>
+	{/if}
+	{/foreach}
+	
+	{$gift_products_block}
+</div>
+{/if}

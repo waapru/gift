@@ -1,0 +1,77 @@
+<script src="{$wa_url}wa-content/js/jquery-plugins/ibutton/jquery.ibutton.min.js"></script>
+<link rel="stylesheet" href="{$wa_url}wa-content/js/jquery-plugins/ibutton/jquery.ibutton.min.css" type="text/css"/>
+
+<link rel="stylesheet" href="{$wa_url}wa-apps/shop/plugins/gift/css/plugin.css?{$plugin->getVersion()}">
+<script src="{$wa_url}wa-apps/shop/plugins/gift/js/plugin.js?{$plugin->getVersion()}"></script>
+
+<h1>
+	Настройка плагина
+	<a href="mailto:waapru@gmail.com" title="waapru@gmail.com"><i class="icon16 status-green"></i>Поддержка</a>
+</h1>
+<div class="gift-plugin-settins">
+	<div id="desc-block">
+		<p>Плагин позволяет закрепить один или несколько подарков за товаром в определенном порядке. Подарки к товару назначаются в редакторе товара. При завершении оформления заказа подарки закрепляются за заказом как товары с нулевой ценой.</p>
+
+		<p>Блок с подарком выводится на странице товара через хук frontend_product.block. Также этот блок возможно вывести через хелпер плагина {literal}{shopGiftPlugin::block($product_id)}{/literal}, где $product_id - идентификатор товар. На странице корзины выводится блок выбора подарков через хук frontend_cart. Так же предоставлена возможность вывода этого блока на страницах оформления заказа через хук frontend_checkout. Здесь покупатель имеет возможность выбрать подходящие подарки из предложенных или отказаться от ненужных.</p>
+
+		<p>Товары-подарки - это товары из каталога товаров. Для назначения товара подарком необходимое поместить его в список товаров с определенным в настройках плагина идентификатором.</p>
+
+		<p>Для корректной работы плагина необходимо выполнить две предварительные настройки.</p>
+
+		<p><i>1. Настройка уведомлений при оформлении заказа</i><br>
+		Так как включение подарков в состав заказа происходит после отправки уведомления об оформлении заказа, то в стандартных уведомлениях подарки будут отсутствовать. Для включения подарков в уведомления необходимо создать новые уведомления, привязанные к событию с идентификатором <b>gift</b>. Событие с идентификатором <b>gift</b> необходимо создать в разделе настройки "Статусы заказов".</p>
+		<p><i>2. Настройка синхронизации блока подарков с содержимым корзины.</i><br>
+		В большинстве тем дизайна перерасчет содержимого корзины происходит без перезагрузки страницы. А содержимое блока с подарками зависит от количества продуктов в корзине, поэтому необходима синхронизация. Для этого нужно вставить <br><b>$.giftCart();</b><br> внутрь функции updateCart, которая находится в файле cart.js вашей темы дизайна.</p>
+		<p>При возникновении затруднений с предварительной настройкой обратитесь в техподдержку плагина.</p>
+		
+		<p>В состав плагина входят два хелпера:<br>
+		{literal}
+		1. <b>{shopGiftPlugin::gifts($product_id)}</b> позволяет вывести блок подарков для товара с идентификатором $product_id<br>
+		2. <b>{shopGiftPlugin::products($gift_id,$product_id)}</b> позволяет вывести блок списка товаров, при покупке которых предлагаются подарки с идентификатором $gift_id или подаки товара с идентификатором $product_id. $gift_id - идентификатор товара-подарка или массив идентификаторов товаров-подарков. Если $gift_id не пуст, то $product_id не учитывается и этот параметр можно не указывать, если $gift_id пуст, то учитывается только $product_id.<br>
+		Примеры:<br>
+		<b>{shopGiftPlugin::products(1)}</b> - выводит товары с подарком, id подарка - 1<br>
+		<b>{shopGiftPlugin::products([1,2])}</b> - выводит товары с подарком, id подарков - 1 и 2<br>
+		<b>{shopGiftPlugin::products(0,1)}</b> - выводит товары с теми подарками, которые есть у товара с id = 1<br>
+		{/literal}
+		</p>
+	</div>
+	<div class="block block-frontend-design">
+		<h4>
+			<i class="icon16 palette"></i>Дизайн плагина на витрине для темы 
+			<select name="theme" id="select-frontend-design-theme">
+				<option value="_">Для всех тем</option>
+				{foreach $themes as $theme}
+				<option value="{$theme}">{$theme}</option>
+				{/foreach}
+			</select>
+		</h4>
+		<a href="#" class="inline-link" data-mode="text/css" data-name="css">css-стили</a>
+		<a href="#" class="inline-link" data-mode="text/javascript" data-name="js">js-скрипты</a>
+		<a href="#" class="inline-link" data-mode="text/html" data-name="products">блок "товары с подарком"</a>
+		<a href="#" class="inline-link" data-mode="text/html" data-name="gift">блок "подарки товара"</a>
+		<div id="frontend-disign-dialog" style="display:none;">
+			<textarea style="display:none;"></textarea>
+			{$wa->csrf()}
+		</div>
+		<div>
+			<span class="hint">По умолчанию дизайн плагина на витрине один и тот же для всех витрин. Если требуется настоить индивидуальный дизайн для каждой витрины, выберите тему в выпадающем списке, кликните на нужный блок и внесите необходимые правки.</span>
+		</div>
+	</div>
+	
+	<div class="fields form" id="gift-form">
+		<form action="?module=plugins&id=gift&action=save" method="post" id="plugins-settings-form">
+			{$standart_settings}
+			<hr>
+			<input type="submit" class="button green" value="Сохранить" id="plugin-submit-btn" data-plugin-id="gift">
+			<span id="plugins-settings-form-status" style="display:none">
+				<i style="vertical-align:middle" class="icon16 yes"></i> [`Saved`]
+			</span>
+		</form>
+	</div>
+</div>
+
+
+<script type="text/javascript">
+var wa_url = '{$wa_url}';
+$.shop.giftPlugin.init();
+</script>
